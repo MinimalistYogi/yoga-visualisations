@@ -122,12 +122,12 @@
         <div class="controls">
             <button id="play-pause-btn">Pause</button>
             <button id="reset-btn">Réinitialiser</button>
-            <button id="center-point-btn">Point central</button>
+            <button id="toggle-background-btn">Changer le fond</button>
         </div>
         
         <div class="slider-container">
-            <div class="slider-label">Vitesse d'expansion: <span id="speed-value">5</span></div>
-            <input type="range" id="speed-slider" min="1" max="10" value="5">
+            <div class="slider-label">Vitesse d'expansion: <span id="speed-value">0.5</span></div>
+            <input type="range" id="speed-slider" min="0.5" max="10" value="0.5" step="0.5">
         </div>
     </div>
     
@@ -140,7 +140,8 @@
         let maxRadius;
         let isAnimating = true;
         let showCenterPoint = true;
-        let expansionSpeed = 5;
+        let expansionSpeed = 0.5;
+        let backgroundColor = '#0B0B61';
         
         function setup() {
             // Déterminer les dimensions du canvas basées sur la taille de l'écran
@@ -175,11 +176,10 @@
                 }
             });
             
-            // Bouton point central
-            const centerPointBtn = document.getElementById('center-point-btn');
-            centerPointBtn.addEventListener('click', () => {
-                showCenterPoint = !showCenterPoint;
-                centerPointBtn.textContent = showCenterPoint ? 'Masquer point' : 'Afficher point';
+            // Bouton pour changer la couleur de fond
+            const toggleBackgroundBtn = document.getElementById('toggle-background-btn');
+            toggleBackgroundBtn.addEventListener('click', () => {
+                backgroundColor = backgroundColor === '#0B0B61' ? '#0A1680' : '#0B0B61';
             });
             
             // Slider de vitesse
@@ -187,28 +187,27 @@
             const speedValue = document.getElementById('speed-value');
             
             speedSlider.addEventListener('input', () => {
-                expansionSpeed = parseInt(speedSlider.value);
+                expansionSpeed = parseFloat(speedSlider.value);
                 speedValue.textContent = expansionSpeed;
             });
         }
         
         function draw() {
-            // Effacer le canvas
-            background('#0B0B61'); // Bleu nuit profond
+            // Effacer le canvas avec la couleur de fond actuelle
+            background(backgroundColor);
             
             // Mettre à jour le rayon si l'animation est active
             if (isAnimating && radius < maxRadius) {
-                radius += (maxRadius / 100) * (expansionSpeed / 5);
+                radius += (maxRadius / 100) * (expansionSpeed / 10);
                 if (radius > maxRadius) radius = maxRadius;
             }
             
             // Dessiner le cercle avec effet de lueur
             drawGlowingCircle(centerX, centerY, radius);
             
-            // Dessiner le point central si activé
-            if (showCenterPoint) {
-                drawGlowingPoint(centerX, centerY);
-            }
+            // Toujours dessiner le point central (plus brillant au début)
+            const pointBrightness = map(radius, 0, maxRadius * 0.2, 1, 0.5);
+            drawGlowingPoint(centerX, centerY, constrain(pointBrightness, 0.5, 1));
         }
         
         function drawGlowingCircle(x, y, r) {
@@ -227,18 +226,18 @@
             circle(x, y, r * 2);
         }
         
-        function drawGlowingPoint(x, y) {
-            // Effet de lueur
-            for (let i = 3; i > 0; i--) {
-                fill(255, 255, 255, 150 / i);
+        function drawGlowingPoint(x, y, intensity = 1) {
+            // Effet de lueur plus intense
+            for (let i = 6; i > 0; i--) {
+                fill(255, 255, 255, 220 * intensity / i);
                 noStroke();
-                circle(x, y, 10 - i * 2);
+                circle(x, y, 16 - i * 2);
             }
             
-            // Point central
+            // Point central plus brillant
             fill(255);
             noStroke();
-            circle(x, y, 4);
+            circle(x, y, 8);
         }
         
         function windowResized() {
