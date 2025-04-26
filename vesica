@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vesica Piscis - Le Miroir Sacré - Yoga de la Visualisation</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #0A1680; /* Bleu profond selon la demande */
+            color: white;
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+        }
+        
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 800px;
+        }
+        
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+            width: 100%;
+        }
+        
+        button {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-size: 15px;
+        }
+        
+        button:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+            text-align: center;
+        }
+        
+        .subtitle {
+            font-size: 1rem;
+            opacity: 0.8;
+            margin-top: 0;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        @media (max-width: 768px) {
+            .controls {
+                flex-wrap: wrap;
+            }
+            
+            button {
+                padding: 8px 16px;
+                font-size: 14px;
+            }
+            
+            h1 {
+                font-size: 1.2rem;
+            }
+            
+            .subtitle {
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Le Miroir Sacré</h1>
+        <p class="subtitle">Vesica Piscis sur le Plan Frontal</p>
+        
+        <div class="canvas-container" id="canvas-container"></div>
+        
+        <div class="controls">
+            <button id="play-pause-btn">Pause</button>
+            <button id="reset-btn">Réinitialiser</button>
+            <button id="next-step-btn">Étape suivante</button>
+        </div>
+    </div>
+    
+    <script>
+        let canvasWidth;
+        let canvasHeight;
+        let centerX;
+        let centerY;
+        let circleRadius;
+        let circle1X, circle2X;
+        let phase = 0;  // Phase d'animation: 0=début, 1=cercle1, 2=cercle2, 3=points d'intersection
+        let fadeIn = 0; // Valeur pour l'effet de fondu
+        let isAnimating = true;
+        let autoProgress = true; // Progression automatique entre les phases
+        let pulsateIntersections = false; // Pulsation des points d'intersection
+        let pulsateValue = 0;
+        
+        function setup() {
+            // Déterminer les dimensions du canvas basées sur la taille de l'écran
+            canvasWidth = min(windowWidth * 0.9, 600);
+            canvasHeight = min(windowHeight * 0.6, 600);
+            
+            // Créer le canvas et l'attacher au conteneur
+            const canvas = createCanvas(canvasWidth, canvasHeight);
+            canvas.parent('canvas-container');
+            
+            // Calculer les paramètres de base
+            centerX = canvasWidth / 2;
+            centerY = canvasHeight / 2;
+            circleRadius = min(canvasWidth, canvasHeight) * 0.3;
+            
+            // Position des cercles
+            circle1X = centerX - circleRadius/2;
+            circle2X = centerX + circleRadius/2;
+            
+            // Configurer les propriétés de rendu
+            smooth();
+            
+            // Bouton lecture/pause
+            const playPauseBtn = document.getElementById('play-pause-btn');
+            playPauseBtn.addEventListener('click', () => {
+                isAnimating = !isAnimating;
+                playPauseBtn.textContent = isAnimating ? 'Pause' : 'Lecture';
+            });
+            
+            // Bouton réinitialiser
+            const resetBtn = document.getElementById('reset-btn');
+            resetBtn.addEventListener('click', () => {
+                phase = 0;
+                fadeIn = 0;
+                pulsateIntersections = false;
+                draw(); // Redessiner immédiatement
+            });
+            
+            // Bouton étape suivante
+            const nextStepBtn = document.getElementById('next-step-btn');
+            nextStepBtn.addEventListener('click', () => {
+                if (phase < 3) {
+                    phase++;
+                    fadeIn = 0;
+                } else if (phase === 3) {
+                    pulsateIntersections = !pulsateIntersections;
+                }
+            });
+        }
+        
+        function draw() {
+            // Effacer le canvas
+            background('#0A1680');
+            
+            // Gérer la progression automatique lente
+            if (isAnimating && autoProgress) {
+                if (fadeIn < 1) {
+                    fadeIn += 0.005; // Très lent pour un effet méditatif
+                } else if (phase < 3) {
+                    phase++;
+                    fadeIn = 0;
+                } else if (phase === 3 && !pulsateIntersections) {
+                    pulsateIntersections = true;
+                }
+            }
+            
+            // Animation de pulsation pour les points d'intersection
+            if (pulsateIntersections) {
+                pulsateValue = (sin(frameCount * 0.02) + 1) * 0.5; // Valeur oscillant entre 0 et 1
+            }
+            
+            // Dessiner selon la phase actuelle
+            if (phase >= 1) {
+                // Premier cercle
+                const alpha1 = phase === 1 ? map(fadeIn, 0, 1, 50, 255) : 255;
+                drawGlowingCircle(circle1X, centerY, circleRadius, alpha1);
+            }
+            
+            if (phase >= 2) {
+                // Second cercle
+                const alpha2 = phase === 2 ? map(fadeIn, 0, 1, 50, 255) : 255;
+                drawGlowingCircle(circle2X, centerY, circleRadius, alpha2);
+                
+                // Zone d'intersection (Vesica Piscis)
+                highlightVesicaPiscis(circle1X, circle2X, centerY, circleRadius);
+            }
+            
+            if (phase >= 3) {
+                // Points d'intersection
+                const alphaPoints = phase === 3 ? map(fadeIn, 0, 1, 50, 255) : 255;
+                
+                // Calculer les points d'intersection
+                const dy = sqrt(pow(circleRadius, 2) - pow(circleRadius/2, 2));
+                
+                // Point d'intersection supérieur
+                drawGlowingIntersection(centerX, centerY - dy, alphaPoints);
+                
+                // Point d'intersection inférieur
+                drawGlowingIntersection(centerX, centerY + dy, alphaPoints);
+            }
+        }
+        
+        function drawGlowingCircle(x, y, r, alpha = 255) {
+            // Effet de lueur externe
+            for (let i = 5; i > 0; i--) {
+                noFill();
+                stroke(255, 255, 255, (alpha / 255) * (50 / i));
+                strokeWeight(i * 1.5);
+                circle(x, y, r * 2 + i * 2);
+            }
+            
+            // Cercle principal
+            noFill();
+            stroke(255, 255, 255, alpha);
+            strokeWeight(2);
+            circle(x, y, r * 2);
+        }
+        
+        function highlightVesicaPiscis(x1, x2, y, r) {
+            // Mettre légèrement en évidence la forme de la Vesica Piscis
+            const distBetweenCenters = abs(x2 - x1);
+            
+            // Ne dessiner que si les cercles se chevauchent
+            if (distBetweenCenters < 2 * r) {
+                // Créer un dégradé subtil pour la Vesica Piscis
+                noStroke();
+                
+                // Utiliser un dégradé blanc très transparent
+                for (let i = 0; i < 10; i++) {
+                    const alpha = map(i, 0, 10, 3, 15);
+                    fill(255, 255, 255, alpha);
+                    
+                    // Dessiner un arc pour chaque partie de la Vesica
+                    beginShape();
+                    // Points pour l'arc du premier cercle
+                    const angleStart1 = acos((x2 - x1) / (2 * r));
+                    const angleEnd1 = TWO_PI - angleStart1;
+                    
+                    for (let a = angleStart1; a <= angleEnd1; a += 0.1) {
+                        const px = x1 + r * cos(a);
+                        const py = y + r * sin(a);
+                        vertex(px, py);
+                    }
+                    
+                    // Points pour l'arc du deuxième cercle
+                    const angleStart2 = PI - angleStart1;
+                    const angleEnd2 = PI + angleStart1;
+                    
+                    for (let a = angleEnd2; a >= angleStart2; a -= 0.1) {
+                        const px = x2 + r * cos(a);
+                        const py = y + r * sin(a);
+                        vertex(px, py);
+                    }
+                    
+                    endShape(CLOSE);
+                }
+            }
+        }
+        
+        function drawGlowingIntersection(x, y, alpha = 255) {
+            // Calculer l'intensité en fonction de la pulsation si active
+            let intensity = pulsateIntersections ? 0.7 + pulsateValue * 0.3 : 1;
+            
+            // Effet de lueur plus intense pour les points d'intersection
+            for (let i = 8; i > 0; i--) {
+                fill(255, 255, 255, (alpha / 255) * (250 * intensity / i));
+                noStroke();
+                circle(x, y, 20 - i * 2);
+            }
+            
+            // Point central brillant
+            fill(255, 255, 255, alpha);
+            noStroke();
+            circle(x, y, 8 * intensity);
+        }
+        
+        function windowResized() {
+            // Recalculer les dimensions et recréer le canvas lors du redimensionnement
+            canvasWidth = min(windowWidth * 0.9, 600);
+            canvasHeight = min(windowHeight * 0.6, 600);
+            resizeCanvas(canvasWidth, canvasHeight);
+            
+            // Mettre à jour les variables dépendant de la taille
+            centerX = canvasWidth / 2;
+            centerY = canvasHeight / 2;
+            circleRadius = min(canvasWidth, canvasHeight) * 0.3;
+            
+            // Position des cercles
+            circle1X = centerX - circleRadius/2;
+            circle2X = centerX + circleRadius/2;
+        }
+    </script>
+</body>
+</html>
