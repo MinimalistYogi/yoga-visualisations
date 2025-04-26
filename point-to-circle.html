@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expansion du Point vers le Cercle - Yoga de la Visualisation</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #0B0B61; /* Bleu nuit profond */
+            color: white;
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+        }
+        
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 800px;
+        }
+        
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+            width: 100%;
+        }
+        
+        button {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-size: 14px;
+        }
+        
+        button:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        .slider-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+        
+        .slider-label {
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        
+        input[type="range"] {
+            width: 80%;
+            max-width: 300px;
+            margin-bottom: 10px;
+        }
+        
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+            text-align: center;
+        }
+        
+        .subtitle {
+            font-size: 1rem;
+            opacity: 0.8;
+            margin-top: 0;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        @media (max-width: 768px) {
+            .controls {
+                flex-wrap: wrap;
+            }
+            
+            button {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+            
+            h1 {
+                font-size: 1.2rem;
+            }
+            
+            .subtitle {
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>L'Écho Parfait du Point</h1>
+        <p class="subtitle">Naissance du Cercle (2D)</p>
+        
+        <div class="canvas-container" id="canvas-container"></div>
+        
+        <div class="controls">
+            <button id="play-pause-btn">Pause</button>
+            <button id="reset-btn">Réinitialiser</button>
+            <button id="center-point-btn">Point central</button>
+        </div>
+        
+        <div class="slider-container">
+            <div class="slider-label">Vitesse d'expansion: <span id="speed-value">5</span></div>
+            <input type="range" id="speed-slider" min="1" max="10" value="5">
+        </div>
+    </div>
+    
+    <script>
+        let canvasWidth;
+        let canvasHeight;
+        let centerX;
+        let centerY;
+        let radius = 0;
+        let maxRadius;
+        let isAnimating = true;
+        let showCenterPoint = true;
+        let expansionSpeed = 5;
+        
+        function setup() {
+            // Déterminer les dimensions du canvas basées sur la taille de l'écran
+            canvasWidth = min(windowWidth * 0.9, 600);
+            canvasHeight = min(windowHeight * 0.6, 600);
+            
+            // Créer le canvas et l'attacher au conteneur
+            const canvas = createCanvas(canvasWidth, canvasHeight);
+            canvas.parent('canvas-container');
+            
+            // Calculer le centre du canvas et le rayon maximal
+            centerX = canvasWidth / 2;
+            centerY = canvasHeight / 2;
+            maxRadius = min(canvasWidth, canvasHeight) * 0.4;
+            
+            // Configurer les propriétés de rendu
+            smooth();
+            
+            // Bouton lecture/pause
+            const playPauseBtn = document.getElementById('play-pause-btn');
+            playPauseBtn.addEventListener('click', () => {
+                isAnimating = !isAnimating;
+                playPauseBtn.textContent = isAnimating ? 'Pause' : 'Lecture';
+            });
+            
+            // Bouton réinitialiser
+            const resetBtn = document.getElementById('reset-btn');
+            resetBtn.addEventListener('click', () => {
+                radius = 0;
+                if (!isAnimating) {
+                    draw(); // Redessiner immédiatement si l'animation est en pause
+                }
+            });
+            
+            // Bouton point central
+            const centerPointBtn = document.getElementById('center-point-btn');
+            centerPointBtn.addEventListener('click', () => {
+                showCenterPoint = !showCenterPoint;
+                centerPointBtn.textContent = showCenterPoint ? 'Masquer point' : 'Afficher point';
+            });
+            
+            // Slider de vitesse
+            const speedSlider = document.getElementById('speed-slider');
+            const speedValue = document.getElementById('speed-value');
+            
+            speedSlider.addEventListener('input', () => {
+                expansionSpeed = parseInt(speedSlider.value);
+                speedValue.textContent = expansionSpeed;
+            });
+        }
+        
+        function draw() {
+            // Effacer le canvas
+            background('#0B0B61'); // Bleu nuit profond
+            
+            // Mettre à jour le rayon si l'animation est active
+            if (isAnimating && radius < maxRadius) {
+                radius += (maxRadius / 100) * (expansionSpeed / 5);
+                if (radius > maxRadius) radius = maxRadius;
+            }
+            
+            // Dessiner le cercle avec effet de lueur
+            drawGlowingCircle(centerX, centerY, radius);
+            
+            // Dessiner le point central si activé
+            if (showCenterPoint) {
+                drawGlowingPoint(centerX, centerY);
+            }
+        }
+        
+        function drawGlowingCircle(x, y, r) {
+            // Effet de lueur externe
+            for (let i = 5; i > 0; i--) {
+                noFill();
+                stroke(255, 255, 255, 50 / i);
+                strokeWeight(i * 2);
+                circle(x, y, r * 2 + i * 2);
+            }
+            
+            // Cercle principal
+            noFill();
+            stroke(255);
+            strokeWeight(2);
+            circle(x, y, r * 2);
+        }
+        
+        function drawGlowingPoint(x, y) {
+            // Effet de lueur
+            for (let i = 3; i > 0; i--) {
+                fill(255, 255, 255, 150 / i);
+                noStroke();
+                circle(x, y, 10 - i * 2);
+            }
+            
+            // Point central
+            fill(255);
+            noStroke();
+            circle(x, y, 4);
+        }
+        
+        function windowResized() {
+            // Recalculer les dimensions et recréer le canvas lors du redimensionnement
+            canvasWidth = min(windowWidth * 0.9, 600);
+            canvasHeight = min(windowHeight * 0.6, 600);
+            resizeCanvas(canvasWidth, canvasHeight);
+            
+            // Mettre à jour les variables dépendant de la taille
+            centerX = canvasWidth / 2;
+            centerY = canvasHeight / 2;
+            maxRadius = min(canvasWidth, canvasHeight) * 0.4;
+        }
+    </script>
+</body>
+</html>
